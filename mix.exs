@@ -4,7 +4,7 @@ defmodule Equalish.MixProject do
   def project do
     [
       app: :equalish,
-      version: "1.0.0",
+      version: "1.0.1",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       docs: docs(),
