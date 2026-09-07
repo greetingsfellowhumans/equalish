@@ -1,6 +1,22 @@
 # Equalish
 
-Equality operators for floats that are *almost* equal. Smooths out rounding errors and floating point precision issues.
+Comparison operators for floats that are *almost* equal.
+
+## The problem this solves
+
+Smooths out rounding errors and floating point precision issues.
+
+```elixir
+    iex> 0.1 + 0.2 
+    0.30000000000000004
+    iex> 0.1 + 0.2 == 0.3
+    false
+    iex> import Equalish
+    iex> is_eq_ish(0.1 + 0.2) == 0.3
+    true
+```
+
+## Guards
 
 ```elixir
 import Equalish
