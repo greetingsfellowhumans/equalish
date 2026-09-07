@@ -32,7 +32,7 @@ defmodule Equalish.MixProject do
     ]
   end
   defp description() do
-    "is_eq_ish(0.1 + 0.2, 0.3) => true"
+    "solve floating point bugs. is_eq_ish(0.1 + 0.2, 0.3) => true"
   end
 
   defp package() do
