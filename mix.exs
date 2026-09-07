@@ -32,7 +32,7 @@ defmodule Equalish.MixProject do
     ]
   end
   defp description() do
-    "Guards and operators for floats that are *almost* equal. is_eq_ish(0.2, 0.200000001)"
+    "is_eq_ish(0.1 + 0.2, 0.3) => true"
   end
 
   defp package() do
