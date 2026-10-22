@@ -12,7 +12,7 @@ Smooths out rounding errors and floating point precision issues.
     iex> 0.1 + 0.2 == 0.3
     false
     iex> import Equalish
-    iex> is_eq_ish(0.1 + 0.2) == 0.3
+    iex> is_eq_ish(0.1 + 0.2, 0.3)
     true
 ```
 
@@ -46,7 +46,19 @@ refute is_gt_ish(0.5, 0.49999999999999)
 
 ## Tolerance
 
-You can pass in a custom tolerance threshold, or add it to your config.
+You can pass in a custom tolerance threshold, or add it to your config:
+
+```elixir
+config :equalish, tolerance: 0.00001
+```
+
+The config value is read at **compile time** (guards cannot read config at runtime), so set it in
+`config/config.exs` rather than `config/runtime.exs`. A different value in `runtime.exs` is ignored
+by `mix run`, and makes a release fail to boot.
+
+The tolerance is a fixed amount, not a percentage, so it suits numbers of everyday size best.
+For very large numbers (e.g. `1.0e12`) rounding errors can exceed it, and for very small numbers
+(e.g. `1.0e-9`) it can hide real differences.
 
 ## Installation
 
@@ -55,9 +67,10 @@ This package can be installed by adding `equalish` to your list of dependencies 
 ```elixir
 def deps do
   [
-    {:equalish, "~> 1.0.0"}
+    {:equalish, "~> 1.0"}
   ]
 end
 ```
 
-Documentation can be found at <https://hexdocs.pm/equalish>.
+Documentation can be found at <https://hexdocs.pm/equalish>, and the list of changes in
+[CHANGELOG.md](CHANGELOG.md).

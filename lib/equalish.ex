@@ -1,10 +1,6 @@
 defmodule Equalish do
-
   @default_tolerance 0.00001
-  @doc false
-  defp get_tolerance() do
-    Application.get_env(:equalish, :tolerance, @default_tolerance)
-  end
+  @tolerance Application.compile_env(:equalish, :tolerance, @default_tolerance)
 
   @moduledoc ~s"""
   Equality operators for floats that are *almost* equal. Smooths out rounding errors and floating point precision issues.
@@ -23,7 +19,8 @@ defmodule Equalish do
   ```
 
   ## Tolerance
-  The default tolerance is `#{@default_tolerance}`, which is to say that two numbers are considered equal if their first 5 decimal places are the same.
+  Two numbers are considered equal if they are no further apart than the tolerance.
+  The default tolerance is `#{@default_tolerance}`.
 
   You can change this in your config file with:
 
@@ -31,6 +28,22 @@ defmodule Equalish do
   config :equalish,
     tolerance: #{@default_tolerance} # <- Change this
   ```
+
+  This is a **compile-time** setting, because guards cannot read config while your program runs:
+
+  * Set it in `config/config.exs` (or an env-specific config), not in `config/runtime.exs`.
+    Changing it there recompiles everything that uses these guards.
+  * A different value in `runtime.exs` is ignored by `mix run` and `iex -S mix`, and
+    makes a release fail to boot.
+
+  You can always pass a tolerance as the third argument instead.
+
+  The tolerance is a fixed amount, not a percentage. This works well for numbers of
+  everyday size, but not for very large or very small ones:
+
+  * `is_eq_ish(1.0e12 + 0.1 + 0.2, 1.0e12 + 0.3)` is `false`, because rounding errors
+    at that size are bigger than `#{@default_tolerance}`.
+  * `is_eq_ish(1.0e-9, 9.0e-6)` is `true`, even though one is 9000 times the other.
 
   Examples below sometimes use the following tolerances as an example:
 
@@ -54,9 +67,8 @@ defmodule Equalish do
       iex> is_eq_ish(0.5, 0.51)
       false
   """
-  @spec is_eq_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_eq_ish(left, right, tolerance \\ get_tolerance()) when abs(left - right) <= tolerance
-
+  @spec is_eq_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_eq_ish(left, right, tolerance \\ @tolerance) when abs(left - right) <= tolerance
 
   @doc ~s"""
   Whether two numbers are not within the given tolerance of each other.
@@ -69,9 +81,9 @@ defmodule Equalish do
       iex> is_not_eq_ish(0.5, 0.5001, @strict)
       true
   """
-  @spec is_not_eq_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_not_eq_ish(left, right, tolerance \\ get_tolerance()) when abs(left - right) > tolerance
-
+  @spec is_not_eq_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_not_eq_ish(left, right, tolerance \\ @tolerance)
+           when abs(left - right) > tolerance
 
   @doc ~s"""
   Whether a number is greater than another number, by AT LEAST the tolerance amount.
@@ -85,8 +97,9 @@ defmodule Equalish do
       iex> is_gt_ish(0.5, 0.50000001)
       false
   """
-  @spec is_gt_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_gt_ish(left, right, tolerance \\ get_tolerance()) when left > right and is_not_eq_ish(left, right, tolerance)
+  @spec is_gt_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_gt_ish(left, right, tolerance \\ @tolerance)
+           when left > right and is_not_eq_ish(left, right, tolerance)
 
   @doc ~s"""
   Whether a number is greater than another number, or equalish.
@@ -101,9 +114,9 @@ defmodule Equalish do
       iex> is_gte_ish(0.5, 0.50000001)
       true
   """
-  @spec is_gte_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_gte_ish(left, right, tolerance \\ get_tolerance()) when left > right or is_eq_ish(left, right, tolerance)
-
+  @spec is_gte_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_gte_ish(left, right, tolerance \\ @tolerance)
+           when left > right or is_eq_ish(left, right, tolerance)
 
   @doc ~s"""
   Whether a number is less than another number, or equalish.
@@ -120,8 +133,9 @@ defmodule Equalish do
       iex> is_lte_ish(0.5, 0.49999999)
       true
   """
-  @spec is_lte_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_lte_ish(left, right, tolerance \\ get_tolerance()) when left < right or is_eq_ish(left, right, tolerance)
+  @spec is_lte_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_lte_ish(left, right, tolerance \\ @tolerance)
+           when left < right or is_eq_ish(left, right, tolerance)
 
   @doc ~s"""
   Whether a number is less than another number, by AT LEAST the tolerance amount.
@@ -137,6 +151,7 @@ defmodule Equalish do
       iex> is_lt_ish(0.5, 0.50001, @strict)
       true
   """
-  @spec is_lt_ish(left :: number(), right :: number(), tolerance :: float()) :: boolean()
-  defguard is_lt_ish(left, right, tolerance \\ get_tolerance()) when left < right and is_not_eq_ish(left, right, tolerance)
+  @spec is_lt_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
+  defguard is_lt_ish(left, right, tolerance \\ @tolerance)
+           when left < right and is_not_eq_ish(left, right, tolerance)
 end
