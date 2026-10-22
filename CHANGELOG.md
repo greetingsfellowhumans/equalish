@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
-## [1.0.2] - 2026-10-21
+## 1.0.2 - 2026-10-21
 
 ### Fixed
 
@@ -31,16 +31,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   that matters for very large and very small numbers.
 - Added this changelog.
 
-## [1.0.1] - 2026-09-03
+## 1.0.1 - 2026-09-03
 
 - Version bump only.
 
-## [1.0.0] - 2026-09-03
+## 1.0.0 - 2026-09-03
 
 - Initial release: `is_eq_ish`, `is_not_eq_ish`, `is_gt_ish`, `is_gte_ish`, `is_lt_ish` and
   `is_lte_ish`, usable as guards or ordinary expressions, with an optional tolerance argument
   and a configurable default.
-
-[1.0.2]: https://github.com/greetingsfellowhumans/equalish/compare/v1.0.1...v1.0.2
-[1.0.1]: https://github.com/greetingsfellowhumans/equalish/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/greetingsfellowhumans/equalish/releases/tag/v1.0.0
