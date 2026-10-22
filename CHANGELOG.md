@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/).
 
+## 1.1.0 - 2026-10-21
+
+### Added
+
+- `is_close/2..4`: a guard that compares numbers using a tolerance proportional to their size
+  (like Python's `math.isclose`), so it works for very large and very small numbers. Defaults
+  to a relative tolerance of `1.0e-9` and an absolute tolerance of `0.0`. Works on every OTP
+  version Elixir 1.14 supports.
+- `is_zero_ish/1..2`: a guard for "is this within the tolerance of zero?".
+- `Equalish.Assertions` with `assert_eq_ish/2..3` and `refute_eq_ish/2..3`: ExUnit assertions
+  whose failure messages show both values, their difference and the tolerance. They fail
+  cleanly on non-numbers, and on numbers too far apart to subtract (such as `1.7e308` and
+  `-1.7e308`), instead of raising `ArithmeticError`. The library does not depend on ExUnit.
+
+### Upgrading
+
+- `import Equalish` now also imports `is_close` and `is_zero_ish`. If a module that imports
+  Equalish defines its own function with one of those names (and a matching arity), it will
+  no longer compile. Use `import Equalish, only: [...]` or rename your function.
+
 ## 1.0.2 - 2026-10-21
 
 ### Fixed

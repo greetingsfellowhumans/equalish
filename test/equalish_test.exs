@@ -20,7 +20,9 @@ defmodule EqualishTest do
       gt: guard_gt(a, b, tol),
       gte: guard_gte(a, b, tol),
       lt: guard_lt(a, b, tol),
-      lte: guard_lte(a, b, tol)
+      lte: guard_lte(a, b, tol),
+      zero: guard_zero(a, tol),
+      close: guard_close(a, b, tol, tol)
     }
   end
 
@@ -32,7 +34,9 @@ defmodule EqualishTest do
       gt: is_gt_ish(a, b, tol),
       gte: is_gte_ish(a, b, tol),
       lt: is_lt_ish(a, b, tol),
-      lte: is_lte_ish(a, b, tol)
+      lte: is_lte_ish(a, b, tol),
+      zero: is_zero_ish(a, tol),
+      close: is_close(a, b, tol, tol)
     }
   end
 
@@ -48,6 +52,10 @@ defmodule EqualishTest do
   defp guard_lt(_, _, _), do: false
   defp guard_lte(a, b, tol) when is_lte_ish(a, b, tol), do: true
   defp guard_lte(_, _, _), do: false
+  defp guard_zero(a, tol) when is_zero_ish(a, tol), do: true
+  defp guard_zero(_, _), do: false
+  defp guard_close(a, b, rel, abs) when is_close(a, b, rel, abs), do: true
+  defp guard_close(_, _, _, _), do: false
 
   defp num, do: one_of([float(min: -@bound, max: @bound), integer()])
   defp tolerance, do: float(min: 0.0, max: 1.0)
@@ -97,6 +105,46 @@ defmodule EqualishTest do
     end
   end
 
+  describe "is_zero_ish" do
+    test "uses the default tolerance" do
+      assert is_zero_ish(0)
+      assert is_zero_ish(-0.0)
+      assert is_zero_ish(0.9e-5)
+      refute is_zero_ish(1.1e-5)
+    end
+
+    test "a value exactly at the tolerance counts as zero" do
+      assert is_zero_ish(-1, 1)
+      refute is_zero_ish(2, 1)
+    end
+  end
+
+  describe "is_close" do
+    test "scales with the size of the numbers" do
+      assert is_close(1.0e20, 1.0e20 * (1 + 1.0e-12))
+      refute is_close(1.0e20, 1.0e20 * (1 + 1.0e-8))
+      refute is_close(1.0e-9, 1.1e-9)
+      assert is_close(1.0e-9, 1.0e-9 * (1 + 1.0e-12))
+    end
+
+    test "only an absolute tolerance helps near zero" do
+      refute is_close(0.0, 1.0e-300)
+      assert is_close(0.0, 0.0)
+      assert is_close(0.0, 1.0e-300, 1.0e-9, 1.0e-12)
+    end
+
+    test "a difference exactly equal to either tolerance counts as close" do
+      assert is_close(100, 110, 0.1)
+      assert is_close(0, 5, 0, 5)
+      refute is_close(100, 112, 0.1, 10)
+    end
+
+    test "integers and negative numbers" do
+      assert is_close(-1_000_000_000_000, -1_000_000_000_001)
+      refute is_close(-1.0, 1.0, 0.5)
+    end
+  end
+
   describe "Properties" do
     property "guards and expressions agree" do
       check all(a <- num(), b <- num(), tol <- tolerance()) do
@@ -140,6 +188,38 @@ defmodule EqualishTest do
               ratio <- float(min: -0.5, max: 0.5)
             ) do
         assert is_eq_ish(a, a + ratio * tol, tol)
+      end
+    end
+
+    property "is_zero_ish is is_eq_ish against zero" do
+      check all(a <- num(), tol <- tolerance()) do
+        assert is_zero_ish(a, tol) == is_eq_ish(a, 0, tol)
+      end
+    end
+
+    property "is_close is symmetric and every number is close to itself" do
+      check all(a <- num(), b <- num(), rel <- tolerance(), abs <- tolerance()) do
+        assert is_close(a, b, rel, abs) == is_close(b, a, rel, abs)
+        assert is_close(a, a, rel, abs)
+      end
+    end
+
+    property "is_close with only a relative tolerance ignores scale" do
+      # Multiplying by a power of two is exact, so the answer must not change.
+      check all(
+              a <- filter(num(), &(abs(&1) > 1.0e-200)),
+              b <- filter(num(), &(abs(&1) > 1.0e-200)),
+              rel <- tolerance(),
+              power <- integer(0..60)
+            ) do
+        scale = :math.pow(2, power)
+        assert is_close(a, b, rel) == is_close(a * scale, b * scale, rel)
+      end
+    end
+
+    property "is_close accepts anything is_eq_ish accepts, given the same absolute tolerance" do
+      check all(a <- num(), b <- num(), rel <- tolerance(), tol <- tolerance()) do
+        if is_eq_ish(a, b, tol), do: assert(is_close(a, b, rel, tol))
       end
     end
   end

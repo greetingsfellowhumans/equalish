@@ -1,7 +1,7 @@
 defmodule Equalish.MixProject do
   use Mix.Project
 
-  @version "1.0.2"
+  @version "1.1.0"
   @source_url "https://github.com/greetingsfellowhumans/equalish"
 
   def project do
@@ -14,13 +14,8 @@ defmodule Equalish.MixProject do
       docs: docs(),
       description: description(),
       package: package(),
-      cli: cli(),
       deps: deps()
     ]
-  end
-
-  defp cli() do
-    [preferred_cli_env: ["test.watch": :test]]
   end
 
   defp docs() do

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Test (Elixir ${{ matrix.elixir }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest version allowed by `elixir: "~> 1.14"` in mix.exs.
+          - elixir: 1.14.5-otp-25
+          - elixir: 1.20.3-otp-29
+    container: elixir:${{ matrix.elixir }}
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: test-${{ matrix.elixir }}-${{ hashFiles('mix.lock') }}
+
+      - run: mix local.hex --force && mix local.rebar --force
+      # Only test deps: ex_doc (dev only) needs Elixir 1.15+.
+      - run: mix deps.get --only test
+      - run: mix compile --warnings-as-errors
+      - run: mix test --warnings-as-errors
+
+  lint:
+    name: Format, Credo, Dialyzer
+    runs-on: ubuntu-latest
+    container: elixir:1.20.3-otp-29
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: lint-${{ hashFiles('mix.lock') }}
+
+      - run: mix local.hex --force && mix local.rebar --force
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+      - run: mix credo --strict
+      - run: mix dialyzer

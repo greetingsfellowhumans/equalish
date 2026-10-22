@@ -1,6 +1,7 @@
 defmodule Equalish do
   @default_tolerance 0.00001
   @tolerance Application.compile_env(:equalish, :tolerance, @default_tolerance)
+  @default_relative_tolerance 1.0e-9
 
   @moduledoc ~s"""
   Equality operators for floats that are *almost* equal. Smooths out rounding errors and floating point precision issues.
@@ -154,4 +155,75 @@ defmodule Equalish do
   @spec is_lt_ish(left :: number(), right :: number(), tolerance :: number()) :: boolean()
   defguard is_lt_ish(left, right, tolerance \\ @tolerance)
            when left < right and is_not_eq_ish(left, right, tolerance)
+
+  @doc ~s"""
+  Whether a number is zero, or within the tolerance of zero.
+
+  ## Examples
+      iex> is_zero_ish(0.1 + 0.2 - 0.3)
+      true
+      iex> is_zero_ish(-0.000001)
+      true
+      iex> is_zero_ish(0.01)
+      false
+      iex> is_zero_ish(0.01, @lax)
+      true
+  """
+  @spec is_zero_ish(value :: number(), tolerance :: number()) :: boolean()
+  defguard is_zero_ish(value, tolerance \\ @tolerance) when is_eq_ish(value, 0, tolerance)
+
+  @doc ~s"""
+  Whether two numbers are close to each other, compared to their size.
+
+  The other guards in this module use a fixed tolerance, which works best for
+  numbers of everyday size. `is_close` instead allows a difference that grows
+  with the numbers being compared, so it also works for very large and very
+  small numbers.
+
+  Two numbers are close if their difference is no bigger than **either**:
+
+    * `relative_tolerance` times the larger of the two (by absolute value).
+      The default `#{@default_relative_tolerance}` means "the same to about 9 significant digits".
+    * `absolute_tolerance`, which defaults to `0.0`.
+
+  Comparing anything to zero needs an `absolute_tolerance`, because a
+  percentage of zero is zero. Use `is_zero_ish/2` for that instead.
+
+  ## Examples
+      iex> is_close(1.0e12 + 0.1 + 0.2, 1.0e12 + 0.3)
+      true
+      iex> is_close(1.0e-9, 9.0e-6)
+      false
+      iex> is_close(100.0, 101.0)
+      false
+      iex> is_close(100.0, 101.0, 0.01)
+      true
+      iex> is_close(1.0e-12, 0.0)
+      false
+      iex> is_close(1.0e-12, 0.0, 1.0e-9, 1.0e-10)
+      true
+  """
+  @spec is_close(
+          left :: number(),
+          right :: number(),
+          relative_tolerance :: number(),
+          absolute_tolerance :: number()
+        ) :: boolean()
+  # Written without max/2, which is only allowed in guards from OTP 26.
+  defguard is_close(
+             left,
+             right,
+             relative_tolerance \\ @default_relative_tolerance,
+             absolute_tolerance \\ 0.0
+           )
+           when abs(left - right) <= absolute_tolerance or
+                  abs(left - right) <= relative_tolerance * abs(left) or
+                  abs(left - right) <= relative_tolerance * abs(right)
+
+  @doc false
+  # The default tolerance, for code built by Equalish.Assertions. The leading
+  # underscores stop `import Equalish` from importing it, so it can never clash
+  # with a caller's own functions.
+  @spec __tolerance__() :: number()
+  def __tolerance__, do: @tolerance
 end
